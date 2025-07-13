@@ -137,8 +137,9 @@ const Player: React.FC<PlayerProps> = ({ currentTrack }) => {
       <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', width: '20%' }}>
           {currentTrack && currentTrack.type === 'youtube' && (
-            <Box sx={{ width: '80px', height: '45px', overflow: 'hidden', mr: 2 }}>
+            <Box sx={{ width: '80px', height: '45px', overflow: 'hidden', mr: 2, position: 'relative' }}>
               <YouTube videoId={currentTrack.videoId} opts={{ ...opts, height: '45', width: '80' }} onReady={onYouTubeReady} onStateChange={onYouTubeStateChange} />
+              <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }} />
             </Box>
           )}
           <Typography variant="body1" color="inherit">
