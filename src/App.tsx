@@ -1,22 +1,20 @@
 import React from 'react';
-import { Grid } from '@mui/material';
+import { Box } from '@mui/material';
 import Sidebar from './components/Sidebar';
 import MainContent from './components/MainContent';
 import Player from './components/Player';
 
 function App() {
   return (
-    <div>
-      <Grid container>
-        <Grid xs={2}>
-          <Sidebar />
-        </Grid>
-        <Grid xs={10}>
-          <MainContent />
-        </Grid>
-      </Grid>
+    <Box sx={{ display: 'flex' }}>
+      <Box sx={{ width: '240px' }}>
+        <Sidebar />
+      </Box>
+      <Box sx={{ flexGrow: 1 }}>
+        <MainContent />
+      </Box>
       <Player />
-    </div>
+    </Box>
   );
 }
 
