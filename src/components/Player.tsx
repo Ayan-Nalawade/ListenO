@@ -18,8 +18,18 @@ const Player: React.FC<PlayerProps> = ({ currentTrack }) => {
   const onYouTubeReady = (event: any) => {
     youtubePlayerRef.current = event.target;
     setDuration(event.target.getDuration());
+    // Play video immediately after it's ready
     event.target.playVideo();
     setIsPlaying(true);
+  };
+
+  const onYouTubeStateChange = (event: any) => {
+    // YouTube player states: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
+    if (event.data === 1) { // Playing
+      setIsPlaying(true);
+    } else if (event.data === 2 || event.data === 0) { // Paused or Ended
+      setIsPlaying(false);
+    }
   };
 
   useEffect(() => {
@@ -128,7 +138,7 @@ const Player: React.FC<PlayerProps> = ({ currentTrack }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', width: '20%' }}>
           {currentTrack && currentTrack.type === 'youtube' && (
             <Box sx={{ width: '80px', height: '45px', overflow: 'hidden', mr: 2 }}>
-              <YouTube videoId={currentTrack.videoId} opts={{ ...opts, height: '45', width: '80' }} onReady={onYouTubeReady} />
+              <YouTube videoId={currentTrack.videoId} opts={{ ...opts, height: '45', width: '80' }} onReady={onYouTubeReady} onStateChange={onYouTubeStateChange} />
             </Box>
           )}
           <Typography variant="body1" color="inherit">
