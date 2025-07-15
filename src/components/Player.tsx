@@ -5,9 +5,11 @@ import YouTube from 'react-youtube';
 
 interface PlayerProps {
   currentTrack: any;
+  onSkipNext: () => void;
+  onSkipPrevious: () => void;
 }
 
-const Player: React.FC<PlayerProps> = ({ currentTrack }) => {
+const Player: React.FC<PlayerProps> = ({ currentTrack, onSkipNext, onSkipPrevious }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const youtubePlayerRef = useRef<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -38,10 +40,22 @@ const Player: React.FC<PlayerProps> = ({ currentTrack }) => {
         // YouTube player is handled by react-youtube component
         setIsPlaying(true);
       } else if (audioRef.current) {
+        // Clear YouTube player if it was active
+        if (youtubePlayerRef.current) {
+          youtubePlayerRef.current.stopVideo();
+        }
         audioRef.current.src = currentTrack.audio;
+        audioRef.current.load(); // Load the new audio source
         audioRef.current.play();
         setIsPlaying(true);
       }
+    } else if (audioRef.current) {
+      // If currentTrack is null (e.g., at initial load or when no track is selected),
+      // ensure local audio is stopped and cleared.
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current.load();
+      setIsPlaying(false);
     }
   }, [currentTrack]);
 
@@ -133,40 +147,28 @@ const Player: React.FC<PlayerProps> = ({ currentTrack }) => {
   };
 
   return (
-    <AppBar position="fixed" sx={{ top: 'auto', bottom: 0, background: '#181818' }}>
-      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <AppBar position="fixed" sx={{ top: 'auto', bottom: 0, bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider' }}>
+      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '80px' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', width: '20%' }}>
           {currentTrack && currentTrack.type === 'youtube' && (
-            <Box sx={{ width: '80px', height: '45px', overflow: 'hidden', mr: 2, position: 'relative' }}>
+            <Box sx={{ width: '80px', height: '45px', overflow: 'hidden', mr: 2, position: 'relative', borderRadius: '4px' }}>
               <YouTube videoId={currentTrack.videoId} opts={{ ...opts, height: '45', width: '80' }} onReady={onYouTubeReady} onStateChange={onYouTubeStateChange} />
               <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }} />
             </Box>
           )}
-          <Typography variant="body1" color="inherit">
+          <Typography variant="body1" color="text.primary" noWrap>
             {currentTrack ? currentTrack.name : 'Not Playing'}
           </Typography>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', width: '60%', justifyContent: 'center' }}>
-          <IconButton color="inherit" onClick={() => {
-            if (currentTrack && currentTrack.type === 'youtube' && youtubePlayerRef.current) {
-              youtubePlayerRef.current.seekTo(currentTime - 10, true);
-            } else if (audioRef.current) {
-              audioRef.current.currentTime -= 10;
-            }
-          }}>
+          <IconButton color="inherit" onClick={onSkipPrevious} sx={{ color: 'text.primary' }}>
             <SkipPrevious />
           </IconButton>
-          <IconButton color="inherit" onClick={togglePlayPause}>
+          <IconButton color="inherit" onClick={togglePlayPause} sx={{ color: 'text.primary' }}>
             {isPlaying ? <Pause /> : <PlayArrow />}
           </IconButton>
-          <IconButton color="inherit" onClick={() => {
-            if (currentTrack && currentTrack.type === 'youtube' && youtubePlayerRef.current) {
-              youtubePlayerRef.current.seekTo(currentTime + 10, true);
-            } else if (audioRef.current) {
-              audioRef.current.currentTime += 10;
-            }
-          }}>
+          <IconButton color="inherit" onClick={onSkipNext} sx={{ color: 'text.primary' }}>
             <SkipNext />
           </IconButton>
           <Box sx={{ width: '70%', ml: 2, mr: 2 }}>
@@ -174,23 +176,23 @@ const Player: React.FC<PlayerProps> = ({ currentTrack }) => {
               value={currentTime}
               max={duration}
               onChange={handleSeek}
-              sx={{ color: '#fff' }}
+              aria-label="time-slider"
             />
           </Box>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="body2" color="text.secondary">
             {formatTime(currentTime)} / {formatTime(duration)}
           </Typography>
         </Box>
 
         <Box sx={{ width: '20%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mr: 1 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
             Speed:
           </Typography>
           <Select
             value={playbackRate}
             onChange={handlePlaybackRateChange}
-            sx={{ color: '#fff', '.MuiOutlinedInput-notchedOutline': { borderColor: '#fff' } }}
             size="small"
+            sx={{ color: 'text.primary' }}
           >
             <MenuItem value={0.5}>0.5x</MenuItem>
             <MenuItem value={0.75}>0.75x</MenuItem>

@@ -1,17 +1,22 @@
 import React, { useState, useRef } from 'react';
-import { Typography, Box, Card, CardContent, CardMedia, TextField, Button } from '@mui/material';
+import { Typography, Box, Card, CardContent, CardMedia, TextField, Button, Menu, MenuItem } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
 
 interface MainContentProps {
   onPlayTrack: (track: any) => void;
+  setPlayableTracks: (tracks: any[]) => void;
+  playlists: any[];
+  addSongToPlaylist: (playlistId: number, track: any) => void;
 }
 
 const YOUTUBE_API_KEY = process.env.REACT_APP_YOUTUBE_API_KEY;
 
-const MainContent: React.FC<MainContentProps> = ({ onPlayTrack }) => {
+const MainContent: React.FC<MainContentProps> = ({ onPlayTrack, setPlayableTracks, playlists, addSongToPlaylist }) => {
   const [youtubeSearchQuery, setYoutubeSearchQuery] = useState('');
   const [youtubeSearchResults, setYoutubeSearchResults] = useState<any[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedTrackForPlaylist, setSelectedTrackForPlaylist] = useState<any>(null);
 
   const handleYouTubeSearch = async () => {
     if (!youtubeSearchQuery) return;
@@ -27,9 +32,11 @@ const MainContent: React.FC<MainContentProps> = ({ onPlayTrack }) => {
         thumbnail: item.snippet.thumbnails.high.url,
       }));
       setYoutubeSearchResults(videos);
+      setPlayableTracks(videos);
     } catch (error) {
       console.error('Error searching YouTube:', error);
       setYoutubeSearchResults([]);
+      setPlayableTracks([]);
     }
   };
 
@@ -44,67 +51,65 @@ const MainContent: React.FC<MainContentProps> = ({ onPlayTrack }) => {
     });
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      const fileURL = URL.createObjectURL(file);
-      onPlayTrack({
-        id: file.name,
-        type: 'local',
-        name: file.name,
-        artist_name: 'Local Artist',
-        audio: fileURL,
-        image: 'https://via.placeholder.com/140?text=Local+Music',
-      });
+  const handleAddClick = (event: React.MouseEvent<HTMLButtonElement>, track: any) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedTrackForPlaylist(track);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedTrackForPlaylist(null);
+  };
+
+  const handleAddToPlaylist = (playlistId: number) => {
+    if (selectedTrackForPlaylist) {
+      addSongToPlaylist(playlistId, selectedTrackForPlaylist);
+      handleMenuClose();
     }
   };
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
+  const suggestedVideos = React.useMemo(() => [
+    { id: 'dQw4w9WgXcQ', title: 'Rick Astley - Never Gonna Give You Up', channelTitle: 'RickAstleyVEVO', thumbnail: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg' },
+    { id: 'kJQP7kiw5Fk', title: 'Luis Fonsi - Despacito ft. Daddy Yankee', channelTitle: 'LuisFonsiVEVO', thumbnail: 'https://i.ytimg.com/vi/kJQP7kiw5Fk/hqdefault.jpg' },
+    { id: 'JGwWNGJdvx8', title: 'Ed Sheeran - Shape of You [Official Video]', channelTitle: 'EdSheeran', thumbnail: 'https://i.ytimg.com/vi/JGwWNGJdvx8/hqdefault.jpg' },
+    { id: 'fJ9rUzIMcZQ', title: 'Charlie Puth - Attention [Official Video]', channelTitle: 'Charlie Puth', thumbnail: 'https://i.ytimg.com/vi/fJ9rUzIMcZQ/hqdefault.jpg' },
+    { id: 'kXYiU_JWPXQ', title: 'Maroon 5 - Girls Like You ft. Cardi B', channelTitle: 'Maroon5VEVO', thumbnail: 'https://i.ytimg.com/vi/kXYiU_JWPXQ/hqdefault.jpg' },
+  ], []);
+
+  // Set suggested videos as playable tracks on initial load
+  React.useEffect(() => {
+    setPlayableTracks(suggestedVideos);
+  }, [setPlayableTracks, suggestedVideos]);
 
   return (
-    <Box sx={{ padding: '20px' }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ p: 3, bgcolor: 'background.default', minHeight: '100vh' }}>
+      <Typography variant="h4" gutterBottom sx={{ color: 'text.primary', mb: 4 }}>
         Welcome to ListenO
       </Typography>
 
-      <Box sx={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+      <Box sx={{ display: 'flex', gap: '16px', mb: 4 }}>
         <TextField
-          label="Search YouTube videos"
+          label="Search ListenO"
           variant="outlined"
           fullWidth
           value={youtubeSearchQuery}
           onChange={(e) => setYoutubeSearchQuery(e.target.value)}
+          sx={{ flexGrow: 1 }}
         />
-        <Button variant="contained" onClick={handleYouTubeSearch}>
-          Search YouTube
+        <Button variant="contained" onClick={handleYouTubeSearch} sx={{ px: 4 }}>
+          Search
         </Button>
       </Box>
 
-      <Box sx={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-        <input
-          type="file"
-          accept="audio/*"
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-        />
-        <Button variant="contained" onClick={handleUploadClick}>
-          Upload Local Music
-        </Button>
-      </Box>
-
-      {youtubeSearchResults.length > 0 && (
-        <Box>
-          <Typography variant="h6" gutterBottom>
+      {youtubeSearchResults.length > 0 ? (
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h6" gutterBottom sx={{ color: 'text.primary' }}>
             YouTube Search Results
           </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
             {youtubeSearchResults.map((video) => (
-              <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 10px)', md: 'calc(33.33% - 14px)', lg: 'calc(25% - 15px)' } }} key={video.id}>
-                <Card sx={{ ':hover': { boxShadow: 20, transform: 'scale(1.05)' }, transition: 'transform 0.3s' }}>
+              <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)', md: 'calc(33.33% - 16px)', lg: 'calc(25% - 18px)' } }} key={video.id}>
+                <Card>
                   <CardMedia
                     component="img"
                     height="140"
@@ -112,13 +117,54 @@ const MainContent: React.FC<MainContentProps> = ({ onPlayTrack }) => {
                     alt={video.title}
                   />
                   <CardContent>
-                    <Typography gutterBottom variant="h5" component="div">
+                    <Typography gutterBottom variant="body1" component="div" noWrap sx={{ color: 'text.primary' }}>
                       {video.title}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" noWrap>
                       {video.channelTitle}
                     </Typography>
-                    <Button variant="contained" size="small" onClick={() => handlePlayYoutubeVideo(video.id, video.title, video.channelTitle, video.thumbnail)}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                      <Button variant="contained" size="small" onClick={() => handlePlayYoutubeVideo(video.id, video.title, video.channelTitle, video.thumbnail)}>
+                        Play
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<AddIcon />}
+                        onClick={(event) => handleAddClick(event, { ...video, type: 'youtube' })}
+                      >
+                        Add
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      ) : (
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h6" gutterBottom sx={{ color: 'text.primary' }}>
+            Suggested Videos
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
+            {suggestedVideos.map((video) => (
+              <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)', md: 'calc(33.33% - 16px)', lg: 'calc(25% - 18px)' } }} key={video.id}>
+                <Card>
+                  <CardMedia
+                    component="img"
+                    height="140"
+                    image={video.thumbnail}
+                    alt={video.title}
+                  />
+                  <CardContent>
+                    <Typography gutterBottom variant="body1" component="div" noWrap sx={{ color: 'text.primary' }}>
+                      {video.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" noWrap>
+                      {video.channelTitle}
+                    </Typography>
+                    <Button variant="contained" size="small" onClick={() => handlePlayYoutubeVideo(video.id, video.title, video.channelTitle, video.thumbnail)} sx={{ mt: 1 }}>
                       Play
                     </Button>
                   </CardContent>
@@ -129,35 +175,23 @@ const MainContent: React.FC<MainContentProps> = ({ onPlayTrack }) => {
         </Box>
       )}
 
-      {youtubeSearchResults.length === 0 && (
-        <Box>
-          <Typography variant="h6" gutterBottom>
-            Featured Playlists
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
-            {[...Array(8)].map((_, index) => (
-              <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 10px)', md: 'calc(33.33% - 14px)', lg: 'calc(25% - 15px)' } }} key={index}>
-                <Card sx={{ ':hover': { boxShadow: 20, transform: 'scale(1.05)' }, transition: 'transform 0.3s' }}>
-                  <CardMedia
-                    component="img"
-                    height="140"
-                    image={`https://picsum.photos/seed/${index}/200/300`}
-                    alt="Playlist Image"
-                  />
-                  <CardContent>
-                    <Typography gutterBottom variant="h5" component="div">
-                      Playlist {index + 1}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      A short description of the playlist.
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Box>
-            ))}
-          </Box>
-        </Box>
-      )}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        {playlists.length === 0 ? (
+          <MenuItem onClick={handleMenuClose} disabled>
+            No playlists. Go to Library to create one.
+          </MenuItem>
+        ) : (
+          playlists.map((playlist: any) => (
+            <MenuItem key={playlist.id} onClick={() => handleAddToPlaylist(playlist.id)}>
+              {playlist.name}
+            </MenuItem>
+          ))
+        )}
+      </Menu>
     </Box>
   );
 };
