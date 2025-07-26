@@ -43,10 +43,9 @@ To enable YouTube video search functionality, you need a Google Cloud Platform p
 
 1.  **Clone the repository:**
     ```bash
-    git clone <repository_url>
+    git clone https://github.com/Ayan-Nalawade/ListenO.git
     cd ListenO
     ```
-    (Note: If you received the project as a zip file, extract it and navigate into the project directory.)
 
 2.  **Create a `.env` file:**
     In the root of your project directory, create a file named `.env`.
